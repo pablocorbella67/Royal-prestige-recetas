@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Recetas Royal Prestige</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Jost:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --gold: #C9A84C;
+    --gold-light: #E8D08A;
+    --dark: #1A1410;
+    --cream: #FAF6EE;
+    --warm: #3D2B1A;
+    --text: #2C2018;
+    --muted: #7A6A58;
+    --border: #E2D8CC;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background: var(--cream); color: var(--text); font-family: 'Jost', sans-serif; min-height: 100vh; }
+
+  header {
+    background: var(--dark);
+    padding: 22px 36px;
+    display: flex; align-items: center; justify-content: space-between;
+    border-bottom: 2px solid var(--gold);
+    position: sticky; top: 0; z-index: 10;
+  }
+  .logo { font-family: 'Playfair Display', serif; color: var(--gold); font-size: 1.35rem; }
+  .logo span { color: #aaa; font-weight: 300; font-size: 0.72rem; display: block; letter-spacing: 0.2em; text-transform: uppercase; margin-top: 3px; }
+
+  main { max-width: 760px; margin: 0 auto; padding: 48px 20px 80px; }
+
+  .intro { text-align: center; margin-bottom: 44px; }
+  .intro h1 { font-family: 'Playfair Display', serif; font-size: 2.3rem; color: var(--warm); margin-bottom: 12px; line-height: 1.2; }
+  .intro h1 em { color: var(--gold); font-style: italic; }
+  .intro p { color: var(--muted); font-weight: 300; font-size: 1rem; line-height: 1.7; }
+
+  .form-steps { display: flex; flex-direction: column; gap: 24px; }
+
+  .step-block { background: #fff; border: 1px solid var(--border); border-radius: 8px; overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,0.04); }
+
+  .step-header { background: var(--dark); padding: 14px 22px; display: flex; align-items: center; gap: 14px; }
+  .step-num { width: 27px; height: 27px; border-radius: 50%; border: 1.5px solid var(--gold); color: var(--gold); font-size: 12px; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .step-title { color: #fff; font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase; font-weight: 600; }
+  .step-body { padding: 22px; }
+
+  .chips { display: flex; flex-wrap: wrap; gap: 10px; }
+  .chip { display: none; }
+  .chip-label {
+    display: inline-flex; align-items: center; gap: 7px;
+    padding: 9px 17px; border: 1.5px solid var(--border); border-radius: 100px;
+    font-size: 14px; cursor: pointer; transition: all 0.15s;
+    color: var(--muted); background: var(--cream); user-select: none;
+  }
+  .chip-label:hover { border-color: var(--gold); color: var(--text); }
+  .chip:checked + .chip-label { background: var(--dark); border-color: var(--dark); color: var(--gold); font-weight: 600; }
+
+  .divider { border: none; border-top: 1px solid var(--border); margin: 18px 0; }
+
+  .toggle-row { display: flex; align-items: center; justify-content: space-between; }
+  .toggle-info .toggle-title { font-size: 15px; color: var(--text); }
+  .toggle-info .toggle-sub { font-size: 12px; color: var(--muted); margin-top: 2px; }
+  .toggle { position: relative; width: 48px; height: 26px; flex-shrink: 0; }
+  .toggle input { display: none; }
+  .toggle-track { position: absolute; inset: 0; background: #DDD4C8; border-radius: 100px; cursor: pointer; transition: background 0.2s; }
+  .toggle-thumb { position: absolute; top: 3px; left: 3px; width: 20px; height: 20px; background: #fff; border-radius: 50%; transition: transform 0.2s; pointer-events: none; box-shadow: 0 1px 4px rgba(0,0,0,0.2); }
+  .toggle input:checked ~ .toggle-track { background: var(--gold); }
+  .toggle input:checked ~ .toggle-thumb { transform: translateX(22px); }
+
+  .allergy-note { font-size: 12px; color: var(--muted); margin-bottom: 14px; }
+
+  textarea {
+    width: 100%; min-height: 88px; padding: 13px 15px;
+    border: 1.5px solid var(--border); border-radius: 6px;
+    font-family: 'Jost', sans-serif; font-size: 14px; color: var(--text);
+    background: var(--cream); resize: vertical; line-height: 1.6;
+    transition: border-color 0.2s;
+  }
+  textarea:focus { outline: none; border-color: var(--gold); }
+  .input-hint { font-size: 12px; color: var(--muted); margin-top: 8px; }
+
+  .btn-generate {
+    width: 100%; padding: 17px; background: var(--dark); color: var(--gold);
+    border: none; border-radius: 8px; font-family: 'Jost', sans-serif;
+    font-size: 13px; letter-spacing: 0.2em; text-transform: uppercase; font-weight: 700;
+    cursor: pointer; transition: background 0.2s; margin-top: 10px;
+    display: flex; align-items: center; justify-content: center; gap: 10px;
+  }
+  .btn-generate:hover { background: var(--warm); }
+  .btn-generate:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  .spinner { width: 16px; height: 16px; border: 2px solid rgba(201,168,76,0.3); border-top-color: var(--gold); border-radius: 50%; animation: spin 0.7s linear infinite; display: none; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .error-msg { background: #FFF3F0; border: 1px solid #FFD0C8; border-radius: 6px; padding: 13px 16px; color: #A05040; font-size: 13px; margin-top: 12px; display: none; }
+
+  #result { display: none; margin-top: 44px; animation: fadeUp 0.5s ease; }
+  @keyframes fadeUp { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
+
+  .recipe-card { background: #fff; border: 1px solid var(--border); border-top: 4px solid var(--gold); border-radius: 8px; overflow: hidden; box-shadow: 0 12px 50px rgba(0,0,0,0.08); }
+
+  .recipe-header { background: var(--dark); padding: 30px 32px 26px; }
+  .recipe-badges { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; }
+  .badge { padding: 4px 12px; border: 1px solid rgba(201,168,76,0.4); border-radius: 100px; font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--gold-light); }
+  .recipe-title { font-family: 'Playfair Display', serif; font-size: 1.9rem; color: #fff; line-height: 1.2; }
+  .recipe-meta { display: flex; gap: 26px; margin-top: 16px; flex-wrap: wrap; }
+  .meta-item { display: flex; flex-direction: column; gap: 2px; }
+  .meta-label { font-size: 10px; letter-spacing: 0.15em; text-transform: uppercase; color: #777; }
+  .meta-value { color: var(--gold-light); font-size: 14px; font-weight: 500; }
+
+  .recipe-body { padding: 30px 32px; }
+  .recipe-desc { font-family: 'Playfair Display', serif; font-style: italic; font-size: 1.02rem; line-height: 1.75; color: #5A4A3A; border-left: 3px solid var(--gold); padding-left: 16px; margin-bottom: 28px; }
+
+  .section-title { font-size: 10px; letter-spacing: 0.22em; text-transform: uppercase; color: var(--gold); font-weight: 700; margin-bottom: 14px; display: flex; align-items: center; gap: 10px; }
+  .section-title::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+
+  .ingredients-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 28px; }
+  .ingredient { display: flex; align-items: flex-start; gap: 9px; padding: 9px 13px; background: var(--cream); border-radius: 4px; font-size: 13px; line-height: 1.4; }
+  .ingredient::before { content: '◆'; color: var(--gold); font-size: 7px; margin-top: 4px; flex-shrink: 0; }
+
+  .steps { margin-bottom: 28px; }
+  .step { display: flex; gap: 16px; padding: 14px 0; border-bottom: 1px solid #F0E8DC; }
+  .step:last-child { border-bottom: none; }
+  .step-n { font-family: 'Playfair Display', serif; font-size: 1.4rem; color: var(--gold-light); font-weight: 700; line-height: 1; min-width: 30px; }
+  .step-text { font-size: 14px; line-height: 1.72; color: #4A3A2A; font-weight: 300; padding-top: 2px; }
+
+  .rp-tip { background: linear-gradient(135deg, var(--dark) 0%, var(--warm) 100%); border-radius: 6px; padding: 24px 26px; display: flex; gap: 14px; align-items: flex-start; }
+  .rp-tip-icon { font-size: 1.5rem; flex-shrink: 0; margin-top: 2px; }
+  .rp-tip-label { font-size: 10px; letter-spacing: 0.22em; text-transform: uppercase; color: var(--gold); margin-bottom: 7px; font-weight: 700; }
+  .rp-tip-text { color: #D4C4A8; font-size: 14px; line-height: 1.7; font-weight: 300; }
+
+  .share-bar { display: flex; gap: 10px; padding: 18px 32px; background: var(--cream); border-top: 1px solid var(--border); align-items: center; flex-wrap: wrap; }
+  .share-label { font-size: 11px; letter-spacing: 0.15em; text-transform: uppercase; color: #aaa; margin-right: 4px; }
+  .share-btn { padding: 8px 15px; border: 1px solid var(--border); border-radius: 3px; background: #fff; font-family: 'Jost', sans-serif; font-size: 13px; cursor: pointer; color: var(--text); transition: all 0.15s; }
+  .share-btn:hover { border-color: var(--gold); color: var(--gold); }
+  .btn-otra { margin-left: auto; padding: 8px 18px; background: var(--dark); color: var(--gold); border: none; border-radius: 3px; font-family: 'Jost', sans-serif; font-size: 13px; cursor: pointer; transition: background 0.15s; }
+  .btn-otra:hover { background: var(--warm); }
+
+  @media (max-width: 560px) {
+    header { padding: 16px 18px; }
+    main { padding: 32px 14px 60px; }
+    .intro h1 { font-size: 1.7rem; }
+    .recipe-header { padding: 24px 20px; }
+    .recipe-body { padding: 24px 20px; }
+    .ingredients-grid { grid-template-columns: 1fr; }
+    .share-bar { padding: 16px 20px; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">
+    Royal Prestige
+    <span>Generador de recetas</span>
+  </div>
+</header>
+
+<main>
+  <div class="intro">
+    <h1>Tu receta <em>perfecta</em> en segundos</h1>
+    <p>Cuéntanos tu ocasión, preferencias y lo que tienes en casa — la IA hará el resto.</p>
+  </div>
+
+  <div class="form-steps">
+
+    <!-- PASO 1 -->
+    <div class="step-block">
+      <div class="step-header">
+        <div class="step-num">1</div>
+        <div class="step-title">¿Para qué ocasión?</div>
+      </div>
+      <div class="step-body">
+        <div class="chips">
+          <input class="chip" type="radio" name="evento" id="ev1" value="cena familiar"><label class="chip-label" for="ev1">🏠 Cena familiar</label>
+          <input class="chip" type="radio" name="evento" id="ev2" value="reunión con amigos"><label class="chip-label" for="ev2">🥂 Con amigos</label>
+          <input class="chip" type="radio" name="evento" id="ev3" value="cena romántica"><label class="chip-label" for="ev3">🕯️ Cena romántica</label>
+          <input class="chip" type="radio" name="evento" id="ev4" value="comida rápida entre semana"><label class="chip-label" for="ev4">⚡ Rápida entre semana</label>
+          <input class="chip" type="radio" name="evento" id="ev5" value="desayuno especial"><label class="chip-label" for="ev5">☀️ Desayuno especial</label>
+          <input class="chip" type="radio" name="evento" id="ev6" value="comida de domingo"><label class="chip-label" for="ev6">🌿 Comida de domingo</label>
+          <input class="chip" type="radio" name="evento" id="ev7" value="celebración o cumpleaños"><label class="chip-label" for="ev7">🎉 Celebración</label>
+          <input class="chip" type="radio" name="evento" id="ev8" value="meal prep semanal"><label class="chip-label" for="ev8">📦 Meal prep</label>
+        </div>
+      </div>
+    </div>
+
+    <!-- PASO 2 -->
+    <div class="step-block">
+      <div class="step-header">
+        <div class="step-num">2</div>
+        <div class="step-title">Preferencia dietética</div>
+      </div>
+      <div class="step-body">
+        <div class="chips">
+          <input class="chip" type="radio" name="dieta" id="d0" value="sin restricción" checked><label class="chip-label" for="d0">🍽️ Sin restricción</label>
+          <input class="chip" type="radio" name="dieta" id="d1" value="mediterránea"><label class="chip-label" for="d1">🫒 Mediterránea</label>
+          <input class="chip" type="radio" name="dieta" id="d2" value="vegana"><label class="chip-label" for="d2">🌱 Vegana</label>
+          <input class="chip" type="radio" name="dieta" id="d3" value="vegetariana"><label class="chip-label" for="d3">🥦 Vegetariana</label>
+          <input class="chip" type="radio" name="dieta" id="d4" value="keto o baja en carbohidratos"><label class="chip-label" for="d4">🥑 Keto</label>
+          <input class="chip" type="radio" name="dieta" id="d5" value="carnívora o alta en proteína"><label class="chip-label" for="d5">🥩 Carnívora</label>
+        </div>
+        <hr class="divider">
+        <div class="toggle-row">
+          <div class="toggle-info">
+            <div class="toggle-title">Incluir lácteos</div>
+            <div class="toggle-sub">Leche, queso, crema, mantequilla…</div>
+          </div>
+          <label class="toggle">
+            <input type="checkbox" id="dairies" checked>
+            <div class="toggle-track"></div>
+            <div class="toggle-thumb"></div>
+          </label>
+        </div>
+      </div>
+    </div>
+
+    <!-- PASO 3 -->
+    <div class="step-block">
+      <div class="step-header">
+        <div class="step-num">3</div>
+        <div class="step-title">Alergias o ingredientes a evitar</div>
+      </div>
+      <div class="step-body">
+        <p class="allergy-note">Selecciona todo lo que aplique — o deja en blanco si no hay restricciones.</p>
+        <div class="chips">
+          <input class="chip" type="checkbox" id="a1" value="gluten"><label class="chip-label" for="a1">🌾 Gluten</label>
+          <input class="chip" type="checkbox" id="a2" value="frutos secos"><label class="chip-label" for="a2">🥜 Frutos secos</label>
+          <input class="chip" type="checkbox" id="a3" value="mariscos"><label class="chip-label" for="a3">🦐 Mariscos</label>
+          <input class="chip" type="checkbox" id="a4" value="huevo"><label class="chip-label" for="a4">🥚 Huevo</label>
+          <input class="chip" type="checkbox" id="a5" value="soya"><label class="chip-label" for="a5">🫘 Soya</label>
+          <input class="chip" type="checkbox" id="a6" value="picante"><label class="chip-label" for="a6">🌶️ Picante</label>
+          <input class="chip" type="checkbox" id="a7" value="cebolla o ajo"><label class="chip-label" for="a7">🧅 Cebolla / Ajo</label>
+          <input class="chip" type="checkbox" id="a8" value="cerdo"><label class="chip-label" for="a8">🐷 Cerdo</label>
+        </div>
+      </div>
+    </div>
+
+    <!-- PASO 4 -->
+    <div class="step-block">
+      <div class="step-header">
+        <div class="step-num">4</div>
+        <div class="step-title">¿Con qué cuentas en casa?</div>
+      </div>
+      <div class="step-body">
+        <textarea id="ingredientesDisponibles" placeholder="Ej: pollo, zanahoria, papa, cebolla, jitomate, arroz, ajo, crema…"></textarea>
+        <p class="input-hint">Escribe los ingredientes que tienes, separados por coma. Si lo dejas vacío, la IA propondrá una receta completa.</p>
+      </div>
+    </div>
+
+  </div>
+
+  <button class="btn-generate" id="btnGenerar" onclick="generarReceta()">
+    <div class="spinner" id="spinner"></div>
+    <span id="btnText">✦ Generar mi receta</span>
+  </button>
+  <div class="error-msg" id="errorMsg"></div>
+
+  <!-- RESULTADO -->
+  <div id="result">
+    <div class="recipe-card">
+      <div class="recipe-header">
+        <div class="recipe-badges" id="recipeBadges"></div>
+        <div class="recipe-title" id="recipeTitle"></div>
+        <div class="recipe-meta">
+          <div class="meta-item"><span class="meta-label">Tiempo</span><span class="meta-value" id="recipeTiempo"></span></div>
+          <div class="meta-item"><span class="meta-label">Porciones</span><span class="meta-value" id="recipePorciones"></span></div>
+          <div class="meta-item"><span class="meta-label">Dificultad</span><span class="meta-value" id="recipeDificultad"></span></div>
+        </div>
+      </div>
+      <div class="recipe-body">
+        <div class="recipe-desc" id="recipeDesc"></div>
+        <div class="section-title">Ingredientes</div>
+        <div class="ingredients-grid" id="ingredientsList"></div>
+        <div class="section-title">Preparación</div>
+        <div class="steps" id="stepsList"></div>
+        <div class="rp-tip">
+          <div class="rp-tip-icon">🏆</div>
+          <div>
+            <div class="rp-tip-label">Tip Royal Prestige</div>
+            <div class="rp-tip-text" id="recipeTip"></div>
+          </div>
+        </div>
+      </div>
+      <div class="share-bar">
+        <span class="share-label">Compartir</span>
+        <button class="share-btn" onclick="copiarReceta()">📋 Copiar</button>
+        <button class="share-btn" onclick="compartirWhatsApp()">💬 WhatsApp</button>
+        <button class="btn-otra" onclick="otraReceta()">↻ Otra receta</button>
+      </div>
+    </div>
+  </div>
+
+</main>
+
+<script>
+let recetaActual = null;
+
+async function generarReceta() {
+  const evento = document.querySelector('input[name="evento"]:checked')?.value || "";
+  const dieta = document.querySelector('input[name="dieta"]:checked')?.value || "sin restricción";
+  const dairies = document.getElementById("dairies").checked;
+  const alergias = [...document.querySelectorAll('input[type="checkbox"][id^="a"]:checked')].map(el => el.value);
+  const ingredientes = document.getElementById("ingredientesDisponibles").value.trim();
+
+  const btn = document.getElementById("btnGenerar");
+  const spinner = document.getElementById("spinner");
+  const btnText = document.getElementById("btnText");
+  const errorMsg = document.getElementById("errorMsg");
+
+  btn.disabled = true;
+  spinner.style.display = "block";
+  btnText.textContent = "Generando tu receta…";
+  errorMsg.style.display = "none";
+  document.getElementById("result").style.display = "none";
+
+  try {
+    const res = await fetch("/api/receta", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ evento, dieta, dairies, alergias, ingredientes }),
+    });
+
+    const receta = await res.json();
+    if (receta.error) throw new Error(receta.error);
+
+    recetaActual = receta;
+    mostrarReceta(receta);
+
+  } catch (err) {
+    errorMsg.textContent = "Error: " + err.message + ". Intenta de nuevo.";
+    errorMsg.style.display = "block";
+  } finally {
+    btn.disabled = false;
+    spinner.style.display = "none";
+    btnText.textContent = "✦ Generar otra receta";
+  }
+}
+
+function mostrarReceta(r) {
+  document.getElementById("recipeBadges").innerHTML = (r.badges || []).map(b => `<span class="badge">${b}</span>`).join("");
+  document.getElementById("recipeTitle").textContent = r.titulo;
+  document.getElementById("recipeTiempo").textContent = r.tiempo;
+  document.getElementById("recipePorciones").textContent = r.porciones;
+  document.getElementById("recipeDificultad").textContent = r.dificultad;
+  document.getElementById("recipeDesc").textContent = r.descripcion;
+  document.getElementById("recipeTip").textContent = r.tip_royal_prestige;
+  document.getElementById("ingredientsList").innerHTML = r.ingredientes.map(i => `<div class="ingredient">${i}</div>`).join("");
+  document.getElementById("stepsList").innerHTML = r.pasos.map((p, i) => `<div class="step"><div class="step-n">${String(i+1).padStart(2,"0")}</div><div class="step-text">${p}</div></div>`).join("");
+  const result = document.getElementById("result");
+  result.style.display = "block";
+  setTimeout(() => result.scrollIntoView({ behavior: "smooth", block: "start" }), 100);
+}
+
+function otraReceta() {
+  document.getElementById("result").style.display = "none";
+  window.scrollTo({ top: 0, behavior: "smooth" });
+  document.getElementById("btnText").textContent = "✦ Generar mi receta";
+}
+
+function copiarReceta() {
+  if (!recetaActual) return;
+  const r = recetaActual;
+  const texto = `🍽️ ${r.titulo}\n⏱ ${r.tiempo}  👥 ${r.porciones}  ${r.dificultad}\n\n${r.descripcion}\n\n📝 INGREDIENTES:\n${r.ingredientes.map(i => "• " + i).join("\n")}\n\n👨‍🍳 PREPARACIÓN:\n${r.pasos.map((p,i) => `${i+1}. ${p}`).join("\n")}\n\n🏆 TIP ROYAL PRESTIGE:\n${r.tip_royal_prestige}`;
+  navigator.clipboard.writeText(texto).then(() => alert("¡Receta copiada!"));
+}
+
+function compartirWhatsApp() {
+  if (!recetaActual) return;
+  const r = recetaActual;
+  const texto = `🍽️ *${r.titulo}*\n⏱ ${r.tiempo} · 👥 ${r.porciones}\n\n${r.descripcion}\n\n*Ingredientes:*\n${r.ingredientes.map(i => "• " + i).join("\n")}\n\n🏆 *Tip Royal Prestige:* ${r.tip_royal_prestige}`;
+  window.open(`https://wa.me/?text=${encodeURIComponent(texto)}`, "_blank");
+}
+</script>
+</body>
+</html>

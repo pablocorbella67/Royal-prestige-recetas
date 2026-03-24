@@ -68,7 +68,7 @@ Reglas:
           content: prompt
         }
       ],
-      temperature: 0.7
+      temperature: 0.9
     });
 
     const text = response.choices[0].message.content;
@@ -78,34 +78,8 @@ Reglas:
 
   } catch (err) {
     console.error("ERROR API:", err);
-
-    return res.status(200).json({
-      titulo: "Pollo cremoso con vegetales",
-      tiempo: "35 min",
-      porciones: "4",
-      dificultad: "Fácil",
-      descripcion: "Una receta casera, cálida y práctica para resolver la comida con lo que tienes en casa.",
-      tip_royal_prestige: "Cocina tapado a fuego medio para conservar mejor la humedad y el sabor.",
-      badges: ["Casera", "Rápida"],
-      ingredientes: [
-        "2 pechugas de pollo",
-        "2 zanahorias",
-        "2 papas",
-        "1/2 cebolla",
-        "1 taza de leche o crema",
-        "1 cucharada de manteca o aceite",
-        "Sal al gusto",
-        "Pimienta al gusto"
-      ],
-      pasos: [
-        "Corta el pollo y los vegetales en trozos medianos.",
-        "Calienta la olla y dora el pollo con la manteca o aceite.",
-        "Agrega la cebolla y cocina por 2 minutos.",
-        "Incorpora la zanahoria y la papa, mezcla bien.",
-        "Añade la leche o crema, sal y pimienta.",
-        "Tapa y cocina a fuego medio-bajo hasta que todo esté suave.",
-        "Sirve caliente."
-      ]
+    return res.status(500).json({
+      error: err.message || "Error generando receta"
     });
   }
 }

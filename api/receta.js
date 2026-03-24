@@ -33,7 +33,7 @@ export default async function handler(req, res) {
     const prompt = `
 Eres un chef experto en cocina con ollas Royal Prestige.
 
-Devuelve únicamente un JSON válido con esta estructura exacta:
+Debes devolver únicamente un JSON válido con esta estructura exacta:
 
 {
   "titulo": "",
@@ -48,7 +48,7 @@ Devuelve únicamente un JSON válido con esta estructura exacta:
   "redi_temp": []
 }
 
-Condiciones:
+Condiciones base:
 - Ocasión: ${evento || "general"}
 - Dieta: ${dieta || "sin restricción"}
 - Restricciones: ${restricciones.join(", ") || "ninguna"}
@@ -57,35 +57,52 @@ Condiciones:
 
 Reglas generales:
 - Responde en español neutro
-- Máximo 6 a 10 ingredientes
-- 4 a 7 pasos de preparación
-- Usa ingredientes y técnica coherentes con la dieta y restricciones
-- Si hay ingredientes disponibles, intenta basarte principalmente en ellos
-- El texto debe ser claro, útil y elegante
+- Usa de 6 a 10 ingredientes
+- Usa de 4 a 7 pasos en "pasos"
 - No escribas nada fuera del JSON
+- La receta debe ser coherente con la dieta y restricciones
+- Si hay ingredientes disponibles, priorízalos
+- Evita explicaciones genéricas
 
 Reglas para "badges":
 - Incluye 2 a 4 badges cortos
 - Si rediTemp = sí, incluye "Redi-Temp"
 - Si dairies = false, incluye "Sin lácteos" cuando aplique
-- Si hay una dieta específica, refléjala cuando aplique
+- Refleja la dieta cuando corresponda
 
-Reglas para "redi_temp":
-- Si rediTemp = "sí", llena "redi_temp" con 4 a 6 indicaciones concretas y prácticas
-- Deben explicar, según la receta:
-  - cómo sellar
-  - cuántos minutos cocinar
-  - intensidad de fuego: alto, medio o bajo
-  - cuándo tapar
-  - cuándo usar válvula abierta
-  - cuándo usar válvula cerrada
-- Las instrucciones deben sonar prácticas, claras y seguras
-- Si la receta no requiere alguno de esos elementos, adapta la explicación de forma lógica
+Reglas críticas para "redi_temp":
 - Si rediTemp = "no", devuelve "redi_temp": []
+- Si rediTemp = "sí", la receta debe estar pensada para cocinarse en HORNALLA / ESTUFA, no en horno
+- PROHIBIDO mencionar horno, hornear, bandeja, 200C, 180C, asado al horno o técnicas similares
+- Las instrucciones deben reflejar los beneficios del sistema inteligente y la tapa con válvula
+- "redi_temp" debe tener entre 5 y 7 indicaciones concretas
+- Debe seguir esta lógica SIEMPRE que la receta tenga proteína o vegetales salteados/cocinados en olla:
+
+Secuencia obligatoria:
+1. Precalentar la olla vacía a fuego medio hasta comprobar el efecto mercurio con una gota de agua
+2. Colocar la proteína y sellarla sin moverla hasta que se despegue sola
+3. Dar vuelta la proteína y sellar el otro lado
+4. Bajar el fuego a un cuarto o fuego bajo
+5. Agregar los vegetales
+6. Tapar con válvula ABIERTA para cocción controlada en estufa
+7. Solo mencionar válvula cerrada si realmente la técnica lo necesita; si no aplica, aclara que se trabaja con válvula abierta
+
+Detalles que deben aparecer cuando correspondan:
+- tiempo aproximado de sellado por lado
+- intensidad del fuego
+- momento exacto de tapar
+- válvula abierta o cerrada
+- tiempo final de cocción
+
+Reglas adicionales:
+- No inventes pasos incompatibles con el uso de válvula
+- No mezcles horno con Redi-Temp
+- No contradigas la lógica de cocción en olla
+- Si la receta elegida no encaja bien con Redi-Temp, crea otra receta que sí encaje
 
 Importante:
-- "pasos" es la receta normal
-- "redi_temp" es una guía adicional específica del sistema inteligente
+- "pasos" = receta normal
+- "redi_temp" = guía específica y práctica del sistema inteligente
 `;
 
     const response = await client.chat.completions.create({
@@ -94,14 +111,14 @@ Importante:
       messages: [
         {
           role: "system",
-          content: "Eres un chef profesional experto en recetas caseras, uso de ollas Royal Prestige y presentación estructurada en JSON."
+          content: "Eres un chef profesional experto en recetas caseras, cocción en estufa con ollas Royal Prestige y uso práctico del sistema inteligente Redi-Temp. Nunca recomiendas horno cuando se pide Redi-Temp."
         },
         {
           role: "user",
           content: prompt
         }
       ],
-      temperature: 0.9
+      temperature: 0.4
     });
 
     const text = response.choices[0].message.content;

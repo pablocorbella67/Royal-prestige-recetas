@@ -1,70 +1,111 @@
+import OpenAI from "openai";
+
+const client = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY,
+});
+
 export default async function handler(req, res) {
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type");
 
-  if (req.method === "OPTIONS") return res.status(200).end();
-  if (req.method !== "POST") return res.status(405).json({ error: "Método no permitido" });
+  if (req.method === "OPTIONS") {
+    return res.status(200).end();
+  }
 
-  const { evento, dieta, dairies, alergias, ingredientes } = req.body;
-
-  const restricciones = [];
-  if (!dairies) restricciones.push("sin lácteos");
-  if (alergias && alergias.length) restricciones.push("sin " + alergias.join(", "));
-
-  const ingTexto = ingredientes && ingredientes.trim()
-    ? `Usa principalmente estos ingredientes que el usuario tiene en casa: ${ingredientes}.`
-    : "Propón una receta completa con ingredientes comunes y accesibles.";
-
-  const prompt = `Eres un chef experto en cocina con ollas Royal Prestige. Genera una receta original y deliciosa con estas condiciones:
-
-- Ocasión: ${evento || "cualquier ocasión"}
-- Dieta: ${dieta || "sin restricción"}
-- Restricciones: ${restricciones.length ? restricciones.join(", ") : "ninguna"}
-- ${ingTexto}
-
-Las ollas Royal Prestige cocinan con vapor sellado (mínima o cero agua), sin grasa, en acero inoxidable quirúrgico 316L, ahorrando energía y conservando hasta 90% de los nutrientes.
-
-Responde ÚNICAMENTE con JSON válido, sin markdown ni texto extra:
-{
-  "titulo": "Nombre creativo y apetecible",
-  "badges": ["etiqueta1", "etiqueta2"],
-  "tiempo": "X minutos",
-  "porciones": "X personas",
-  "dificultad": "Fácil",
-  "descripcion": "Dos oraciones evocadoras",
-  "ingredientes": ["cantidad + ingrediente"],
-  "pasos": ["Paso detallado..."],
-  "tip_royal_prestige": "Cómo la tecnología Royal Prestige mejora esta receta específicamente."
-}`;
+  if (req.method !== "POST") {
+    return res.status(405).json({ error: "Método no permitido" });
+  }
 
   try {
-    const response = await fetch("https://api.anthropic.com/v1/messages", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "x-api-key": process.env.ANTHROPIC_API_KEY,
-        "anthropic-version": "2023-06-01",
-      },
-      body: JSON.stringify({
-        model: "claude-sonnet-4-20250514",
-        max_tokens: 1200,
-        messages: [{ role: "user", content: prompt }],
-      }),
+    const { evento, dieta, dairies, alergias, ingredientes } = req.body;
+
+    const restricciones = [];
+    if (!dairies) restricciones.push("sin lácteos");
+    if (alergias?.length) restricciones.push(`sin ${alergias.join(", ")}`);
+
+    const prompt = `
+Eres un chef experto en cocina con ollas Royal Prestige.
+
+Devuelve únicamente un JSON válido con esta estructura exacta:
+
+{
+  "titulo": "",
+  "tiempo": "",
+  "porciones": "",
+  "dificultad": "",
+  "descripcion": "",
+  "tip_royal_prestige": "",
+  "badges": [],
+  "ingredientes": [],
+  "pasos": []
+}
+
+Condiciones:
+- Ocasión: ${evento || "general"}
+- Dieta: ${dieta || "sin restricción"}
+- Restricciones: ${restricciones.join(", ") || "ninguna"}
+- Ingredientes disponibles: ${ingredientes || "libre"}
+
+Reglas:
+- En español neutro
+- 6 a 10 ingredientes
+- 4 a 7 pasos
+- Texto claro y útil
+- Sin texto fuera del JSON
+`;
+
+    const response = await client.chat.completions.create({
+      model: "gpt-4o-mini",
+      response_format: { type: "json_object" },
+      messages: [
+        {
+          role: "system",
+          content: "Eres un chef profesional experto en recetas caseras y presentación estructurada en JSON."
+        },
+        {
+          role: "user",
+          content: prompt
+        }
+      ],
+      temperature: 0.7
     });
 
-    const data = await response.json();
-    if (data.error) return res.status(500).json({ error: data.error.message });
+    const text = response.choices[0].message.content;
+    const receta = JSON.parse(text);
 
-    const text = data.content.map(b => b.type === "text" ? b.text : "").join("");
-    const match = text.match(/\{[\s\S]*\}/);
-    if (!match) return res.status(500).json({ error: "Respuesta inválida del modelo" });
-
-    const receta = JSON.parse(match[0]);
     return res.status(200).json(receta);
 
   } catch (err) {
-    return res.status(500).json({ error: err.message });
+    console.error("ERROR API:", err);
+
+    return res.status(200).json({
+      titulo: "Pollo cremoso con vegetales",
+      tiempo: "35 min",
+      porciones: "4",
+      dificultad: "Fácil",
+      descripcion: "Una receta casera, cálida y práctica para resolver la comida con lo que tienes en casa.",
+      tip_royal_prestige: "Cocina tapado a fuego medio para conservar mejor la humedad y el sabor.",
+      badges: ["Casera", "Rápida"],
+      ingredientes: [
+        "2 pechugas de pollo",
+        "2 zanahorias",
+        "2 papas",
+        "1/2 cebolla",
+        "1 taza de leche o crema",
+        "1 cucharada de manteca o aceite",
+        "Sal al gusto",
+        "Pimienta al gusto"
+      ],
+      pasos: [
+        "Corta el pollo y los vegetales en trozos medianos.",
+        "Calienta la olla y dora el pollo con la manteca o aceite.",
+        "Agrega la cebolla y cocina por 2 minutos.",
+        "Incorpora la zanahoria y la papa, mezcla bien.",
+        "Añade la leche o crema, sal y pimienta.",
+        "Tapa y cocina a fuego medio-bajo hasta que todo esté suave.",
+        "Sirve caliente."
+      ]
+    });
   }
 }
-

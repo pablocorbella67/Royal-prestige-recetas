@@ -58,9 +58,10 @@
 
   .divider { border: none; border-top: 1px solid var(--border); margin: 18px 0; }
 
-  .toggle-row { display: flex; align-items: center; justify-content: space-between; }
+  .toggle-row { display: flex; align-items: center; justify-content: space-between; gap: 18px; }
   .toggle-info .toggle-title { font-size: 15px; color: var(--text); }
-  .toggle-info .toggle-sub { font-size: 12px; color: var(--muted); margin-top: 2px; }
+  .toggle-info .toggle-sub { font-size: 12px; color: var(--muted); margin-top: 2px; line-height: 1.5; }
+  .toggle-stack { display: flex; flex-direction: column; gap: 18px; }
   .toggle { position: relative; width: 48px; height: 26px; flex-shrink: 0; }
   .toggle input { display: none; }
   .toggle-track { position: absolute; inset: 0; background: #DDD4C8; border-radius: 100px; cursor: pointer; transition: background 0.2s; }
@@ -145,6 +146,7 @@
     .recipe-body { padding: 24px 20px; }
     .ingredients-grid { grid-template-columns: 1fr; }
     .share-bar { padding: 16px 20px; }
+    .toggle-row { align-items: flex-start; }
   }
 </style>
 </head>
@@ -165,7 +167,6 @@
 
   <div class="form-steps">
 
-    <!-- PASO 1 -->
     <div class="step-block">
       <div class="step-header">
         <div class="step-num">1</div>
@@ -185,7 +186,6 @@
       </div>
     </div>
 
-    <!-- PASO 2 -->
     <div class="step-block">
       <div class="step-header">
         <div class="step-num">2</div>
@@ -200,22 +200,37 @@
           <input class="chip" type="radio" name="dieta" id="d4" value="keto o baja en carbohidratos"><label class="chip-label" for="d4">🥑 Keto</label>
           <input class="chip" type="radio" name="dieta" id="d5" value="carnívora o alta en proteína"><label class="chip-label" for="d5">🥩 Carnívora</label>
         </div>
+
         <hr class="divider">
-        <div class="toggle-row">
-          <div class="toggle-info">
-            <div class="toggle-title">Incluir lácteos</div>
-            <div class="toggle-sub">Leche, queso, crema, mantequilla…</div>
+
+        <div class="toggle-stack">
+          <div class="toggle-row">
+            <div class="toggle-info">
+              <div class="toggle-title">Incluir lácteos</div>
+              <div class="toggle-sub">Leche, queso, crema, mantequilla…</div>
+            </div>
+            <label class="toggle">
+              <input type="checkbox" id="dairies" checked>
+              <div class="toggle-track"></div>
+              <div class="toggle-thumb"></div>
+            </label>
           </div>
-          <label class="toggle">
-            <input type="checkbox" id="dairies" checked>
-            <div class="toggle-track"></div>
-            <div class="toggle-thumb"></div>
-          </label>
+
+          <div class="toggle-row">
+            <div class="toggle-info">
+              <div class="toggle-title">Receta optimizada para sistema inteligente Redi-Temp</div>
+              <div class="toggle-sub">Agrega indicaciones de sellado, fuego, minutos, tapa y válvula abierta o cerrada.</div>
+            </div>
+            <label class="toggle">
+              <input type="checkbox" id="rediTemp">
+              <div class="toggle-track"></div>
+              <div class="toggle-thumb"></div>
+            </label>
+          </div>
         </div>
       </div>
     </div>
 
-    <!-- PASO 3 -->
     <div class="step-block">
       <div class="step-header">
         <div class="step-num">3</div>
@@ -236,7 +251,6 @@
       </div>
     </div>
 
-    <!-- PASO 4 -->
     <div class="step-block">
       <div class="step-header">
         <div class="step-num">4</div>
@@ -256,7 +270,6 @@
   </button>
   <div class="error-msg" id="errorMsg"></div>
 
-  <!-- RESULTADO -->
   <div id="result">
     <div class="recipe-card">
       <div class="recipe-header">
@@ -270,10 +283,18 @@
       </div>
       <div class="recipe-body">
         <div class="recipe-desc" id="recipeDesc"></div>
+
         <div class="section-title">Ingredientes</div>
         <div class="ingredients-grid" id="ingredientsList"></div>
+
         <div class="section-title">Preparación</div>
         <div class="steps" id="stepsList"></div>
+
+        <div id="rediTempSection" style="display:none;">
+          <div class="section-title">Sistema inteligente Redi-Temp</div>
+          <div class="steps" id="rediTempSteps"></div>
+        </div>
+
         <div class="rp-tip">
           <div class="rp-tip-icon">🏆</div>
           <div>
@@ -300,6 +321,7 @@ async function generarReceta() {
   const evento = document.querySelector('input[name="evento"]:checked')?.value || "";
   const dieta = document.querySelector('input[name="dieta"]:checked')?.value || "sin restricción";
   const dairies = document.getElementById("dairies").checked;
+  const rediTemp = document.getElementById("rediTemp").checked;
   const alergias = [...document.querySelectorAll('input[type="checkbox"][id^="a"]:checked')].map(el => el.value);
   const ingredientes = document.getElementById("ingredientesDisponibles").value.trim();
 
@@ -308,24 +330,28 @@ async function generarReceta() {
   const btnText = document.getElementById("btnText");
   const errorMsg = document.getElementById("errorMsg");
 
+  errorMsg.style.display = "none";
+  document.getElementById("result").style.display = "none";
+
   btn.disabled = true;
   spinner.style.display = "block";
   btnText.textContent = "Generando tu receta…";
-  errorMsg.style.display = "none";
-  document.getElementById("result").style.display = "none";
 
   try {
     const res = await fetch("/api/receta", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ evento, dieta, dairies, alergias, ingredientes }),
+      body: JSON.stringify({ evento, dieta, dairies, rediTemp, alergias, ingredientes }),
     });
 
-    const receta = await res.json();
-    if (receta.error) throw new Error(receta.error);
+    const data = await res.json();
 
-    recetaActual = receta;
-    mostrarReceta(receta);
+    if (!res.ok) {
+      throw new Error(data.error || `HTTP ${res.status}`);
+    }
+
+    recetaActual = data;
+    mostrarReceta(data);
 
   } catch (err) {
     errorMsg.textContent = "Error: " + err.message + ". Intenta de nuevo.";
@@ -339,14 +365,26 @@ async function generarReceta() {
 
 function mostrarReceta(r) {
   document.getElementById("recipeBadges").innerHTML = (r.badges || []).map(b => `<span class="badge">${b}</span>`).join("");
-  document.getElementById("recipeTitle").textContent = r.titulo;
-  document.getElementById("recipeTiempo").textContent = r.tiempo;
-  document.getElementById("recipePorciones").textContent = r.porciones;
-  document.getElementById("recipeDificultad").textContent = r.dificultad;
-  document.getElementById("recipeDesc").textContent = r.descripcion;
-  document.getElementById("recipeTip").textContent = r.tip_royal_prestige;
-  document.getElementById("ingredientsList").innerHTML = r.ingredientes.map(i => `<div class="ingredient">${i}</div>`).join("");
-  document.getElementById("stepsList").innerHTML = r.pasos.map((p, i) => `<div class="step"><div class="step-n">${String(i+1).padStart(2,"0")}</div><div class="step-text">${p}</div></div>`).join("");
+  document.getElementById("recipeTitle").textContent = r.titulo || "";
+  document.getElementById("recipeTiempo").textContent = r.tiempo || "";
+  document.getElementById("recipePorciones").textContent = r.porciones || "";
+  document.getElementById("recipeDificultad").textContent = r.dificultad || "";
+  document.getElementById("recipeDesc").textContent = r.descripcion || "";
+  document.getElementById("recipeTip").textContent = r.tip_royal_prestige || "";
+  document.getElementById("ingredientsList").innerHTML = (r.ingredientes || []).map(i => `<div class="ingredient">${i}</div>`).join("");
+  document.getElementById("stepsList").innerHTML = (r.pasos || []).map((p, i) => `<div class="step"><div class="step-n">${String(i + 1).padStart(2, "0")}</div><div class="step-text">${p}</div></div>`).join("");
+
+  const rediTempSection = document.getElementById("rediTempSection");
+  const rediTempSteps = document.getElementById("rediTempSteps");
+
+  if (r.redi_temp && r.redi_temp.length) {
+    rediTempSection.style.display = "block";
+    rediTempSteps.innerHTML = r.redi_temp.map((p, i) => `<div class="step"><div class="step-n">${String(i + 1).padStart(2, "0")}</div><div class="step-text">${p}</div></div>`).join("");
+  } else {
+    rediTempSection.style.display = "none";
+    rediTempSteps.innerHTML = "";
+  }
+
   const result = document.getElementById("result");
   result.style.display = "block";
   setTimeout(() => result.scrollIntoView({ behavior: "smooth", block: "start" }), 100);
@@ -361,14 +399,24 @@ function otraReceta() {
 function copiarReceta() {
   if (!recetaActual) return;
   const r = recetaActual;
-  const texto = `🍽️ ${r.titulo}\n⏱ ${r.tiempo}  👥 ${r.porciones}  ${r.dificultad}\n\n${r.descripcion}\n\n📝 INGREDIENTES:\n${r.ingredientes.map(i => "• " + i).join("\n")}\n\n👨‍🍳 PREPARACIÓN:\n${r.pasos.map((p,i) => `${i+1}. ${p}`).join("\n")}\n\n🏆 TIP ROYAL PRESTIGE:\n${r.tip_royal_prestige}`;
+
+  const bloqueRediTemp = r.redi_temp && r.redi_temp.length
+    ? `\n\n🔥 SISTEMA INTELIGENTE REDI-TEMP:\n${r.redi_temp.map((p, i) => `${i + 1}. ${p}`).join("\n")}`
+    : "";
+
+  const texto = `🍽️ ${r.titulo}\n⏱ ${r.tiempo}  👥 ${r.porciones}  ${r.dificultad}\n\n${r.descripcion}\n\n📝 INGREDIENTES:\n${(r.ingredientes || []).map(i => "• " + i).join("\n")}\n\n👨‍🍳 PREPARACIÓN:\n${(r.pasos || []).map((p,i) => `${i+1}. ${p}`).join("\n")}${bloqueRediTemp}\n\n🏆 TIP ROYAL PRESTIGE:\n${r.tip_royal_prestige}`;
   navigator.clipboard.writeText(texto).then(() => alert("¡Receta copiada!"));
 }
 
 function compartirWhatsApp() {
   if (!recetaActual) return;
   const r = recetaActual;
-  const texto = `🍽️ *${r.titulo}*\n⏱ ${r.tiempo} · 👥 ${r.porciones}\n\n${r.descripcion}\n\n*Ingredientes:*\n${r.ingredientes.map(i => "• " + i).join("\n")}\n\n🏆 *Tip Royal Prestige:* ${r.tip_royal_prestige}`;
+
+  const bloqueRediTemp = r.redi_temp && r.redi_temp.length
+    ? `\n\n🔥 *Sistema inteligente Redi-Temp:*\n${r.redi_temp.map((p, i) => `${i + 1}. ${p}`).join("\n")}`
+    : "";
+
+  const texto = `🍽️ *${r.titulo}*\n⏱ ${r.tiempo} · 👥 ${r.porciones}\n\n${r.descripcion}\n\n*Ingredientes:*\n${(r.ingredientes || []).map(i => "• " + i).join("\n")}\n\n*Preparación:*\n${(r.pasos || []).map((p, i) => `${i + 1}. ${p}`).join("\n")}${bloqueRediTemp}\n\n🏆 *Tip Royal Prestige:* ${r.tip_royal_prestige}`;
   window.open(`https://wa.me/?text=${encodeURIComponent(texto)}`, "_blank");
 }
 </script>
